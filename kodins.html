@@ -1,0 +1,857 @@
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Šokolādes Varde</title>
+
+<style>
+body {
+    font-family: Bookman Old Style, times new roman;
+    margin: 0;
+    padding: 20px;
+    background: #E2B3FF;
+}
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: auto;
+}
+.layout {
+  display: flex;
+  gap: 10px;
+}
+* {
+    box-sizing: border-box;
+}
+  
+h2 {
+    text-align: center;
+}
+
+.items-grid #items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+}
+
+/* Product cards */
+.item-row {
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.item-row:active {
+    transform: scale(0.95);
+}
+
+.item-row.added {
+    background: #d8ffd8;
+    transform: scale(0.96);
+}
+
+.item-row img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+}
+
+.item-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #f3dcff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 26px;
+}
+
+.product-name {
+    font-weight: bold;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+.product-price {
+    color: #666;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+/* Basket */
+#basket {
+    width: 100%;
+    margin-top: 15px;
+    padding: 10px;
+    background: white;
+    border-radius: 10px;
+    min-height: 50px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.basket-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.basket-text {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.basket-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.basket-controls button {
+    width: 46px;
+    height: 40px;
+    padding: 0;
+    font-size: 22px;
+}
+
+.basket-quantity {
+    min-width: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.empty-basket {
+    text-align: center;
+    color: #777;
+    line-height: 1.5;
+}
+
+/* Buttons */
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    cursor: url('https://cdn.cursors-4u.net/previews/harry-potter-magical-wand-ef2c54d6-32.webp') 32 32, auto !important;
+    transition: 0.2s;
+}
+
+.add-btn {
+    background: #E2B3FF;
+    color: white;
+}
+
+.add-btn:hover {
+    background: #5B8040;
+}
+
+.remove-btn {
+    background: #dfe6e9;
+}
+
+.remove-btn:hover {
+    background: #DE811D;
+}
+
+.action-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    font-size: 18px;
+    background: #00b894;
+    color: white;
+}
+
+.action-btn:hover {
+    background: #00997a;
+}
+
+/* Payment */
+.payment-box {
+    margin-top: 10px;
+    background: white;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.payment-box input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+  
+.money-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.money-row span {
+    font-weight: bold;
+}
+
+.money-controls {
+    display: grid;
+    grid-template-columns: 46px 55px 46px;
+    gap: 6px;
+    align-items: center;
+}
+
+.money-controls input {
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
+}
+
+.money-controls button {
+    height: 40px;
+    padding: 0;
+    font-size: 22px;
+}
+.payment-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.payment-actions button {
+    font-size: 14px;
+    padding: 8px;
+}
+
+.shop-header {
+    background: white;
+    padding: 16px 10px;
+    border-radius: 18px;
+    text-align: center;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.shop-header:active {
+    transform: scale(0.96);
+}
+
+.shop-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: #5B2C6F;
+}
+
+.shop-subtitle {
+    font-size: 13px;
+    color: #666;
+    margin-top: 6px;
+}
+
+.shop-header.magic {
+    animation: magicPop 0.5s;
+    background: #fff5ff;
+}
+.loading-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    color: #777;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.custom-item-card {
+    border: 2px dashed #9b59b6;
+    background: #fff5ff;
+}
+.sheet-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+
+    background: #5B2C6F;
+    color: white;
+    border: none;
+    border-radius: 10px;
+}    
+
+.footer-credit {
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(80, 40, 100, 0.2);
+    text-align: center;
+    font-size: 12px;
+    color: rgba(80, 40, 100, 0.65);
+}
+.search-box {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.search-bar {
+    flex: 1;
+    box-sizing: border-box;
+    padding: 12px;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-family: inherit;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.search-bar:focus {
+    outline: 2px solid #9b59b6;
+}
+
+.clear-search-btn {
+    width: 48px;
+    padding: 0;
+    border-radius: 14px;
+    background: white;
+    color: #5B2C6F;
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+@keyframes magicPop {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.06) rotate(-1deg);
+    }
+    70% {
+        transform: scale(0.98) rotate(1deg);
+    }
+    100% {
+        transform: scale(1);
+    }
+}  
+  
+#change {
+    font-size: 18px;
+    margin-top: 5px;
+    font-weight: bold;
+}
+
+#total {
+    margin-top: 15px;
+    font-weight: bold;
+    text-align: left;
+    font-size: 16px;
+}
+
+/* Mobile adjustments */
+
+</style>
+</head>
+
+
+
+
+
+<!SEIT SAKAS ISTAIS KODS>
+
+<div class="container">
+
+  <div class="shop-header" onclick="magicTitle()">
+  <div class="shop-title">✨ Šokolādes Varde ✨</div>
+  <div class="shop-subtitle">Pieskaries precei, lai to pievienotu grozam</div>  
+  </div>
+    <div class="search-box">
+      <input 
+        type="text" 
+        id="searchInput" 
+        class="search-bar" 
+        placeholder="Meklēt preci..."
+        oninput="filterItems()"
+      >
+    
+      <button class="clear-search-btn" onclick="clearSearch()">
+        ✕
+      </button>
+    </div>
+   <div class="items-grid">
+    <div id="items">
+      <div class="loading-message">Ielādē preces...</div>
+    </div>
+   </div>
+    <!-- RIGHT SIDE -->
+
+
+      <h3>Grozā šobrīd:</h3>
+      <div id="basket"></div>
+
+      <div id="total">Kopā jāmaksā: 0G 0S 0K</div>
+
+      <div class="payment-box">
+        <h3>Samaksāja:</h3>
+
+        <div class="money-row">
+          <span>Galeoni</span>
+          <div class="money-controls">
+            <button type="button" onclick="changePaid('paidG', -1)">-</button>
+            <input type="number" id="paidG" value="0" readonly>
+            <button type="button" onclick="changePaid('paidG', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="money-row">
+          <span>Sirpi</span>
+          <div class="money-controls">
+            <button type="button" onclick="changePaid('paidS', -1)">-</button>
+            <input type="number" id="paidS" value="0" readonly>
+            <button type="button" onclick="changePaid('paidS', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="money-row">
+          <span>Knutas</span>
+          <div class="money-controls">
+            <button type="button" onclick="changePaid('paidK', -1)">-</button>
+            <input type="number" id="paidK" value="0" readonly>
+            <button type="button" onclick="changePaid('paidK', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="payment-actions">
+          <button type="button" onclick="setExactPayment()">Samaksāja precīzi</button>
+          <button type="button" onclick="clearPaid()">Notīrīt</button>
+        </div>
+
+        <div id="change">
+          Atlikums: 0G 0S 0K
+        </div>
+      </div>
+
+      <button class="action-btn" style="background:#636e72;" onclick="resetBasket()">JAUNS PIRKUMS</button>
+      <button class="sheet-btn" onclick="showComingSoonMessage()">
+          Mainīt preces
+      </button>
+
+    <div class="footer-credit">
+      Kases sistēmu izstrādājis Asniņš ✨
+    </div>
+    </div>
+
+
+
+
+
+
+<!FUNKCIJAS, SO NEAIZTIEKAM>
+
+
+
+
+  
+<script>
+// Currency system
+const KNUTAS_IN_SIRPS = 5;
+const SIRPS_IN_GALEON = 5;
+const KNUTAS_IN_GALEON = KNUTAS_IN_SIRPS * SIRPS_IN_GALEON;
+
+function toKnutas(g = 0, s = 0, k = 0) {
+    return g * KNUTAS_IN_GALEON + s * KNUTAS_IN_SIRPS + k;
+}
+
+function fromKnutas(total) {
+    const g = Math.floor(total / KNUTAS_IN_GALEON);
+    const remainder = total % KNUTAS_IN_GALEON;
+    const s = Math.floor(remainder / KNUTAS_IN_SIRPS);
+    const k = remainder % KNUTAS_IN_SIRPS;
+    return { g, s, k };
+}
+
+function formatMoney(knutas) {
+    const m = fromKnutas(knutas);
+    return `${m.g}G ${m.s}S ${m.k}K`;
+}
+
+// Items with images
+let items = {};
+
+let basket = {};
+let totalKnutas = 0;
+
+for (let name in items) {
+    basket[name] = 0;
+}
+
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbx9VJ27vY23xVM4IM-gC99u0YnW2FOIdjH8YdnSrpuYEueyTikOnW4KzhrTyjRdNfxW/exec";
+
+const itemsDiv = document.getElementById("items");
+
+async function loadItemsFromSheet() {
+    const response = await fetch(SHEET_URL);
+    const sheetItems = await response.json();
+
+    items = {};
+    basket = {};
+    totalKnutas = 0;
+
+    itemsDiv.innerHTML = "";
+    sheetItems.sort((a, b) => {
+        const priceA = toKnutas(a.g, a.s, a.k);
+        const priceB = toKnutas(b.g, b.s, b.k);
+
+        return priceB - priceA; // most expensive first
+    });
+    sheetItems.forEach(item => {
+        items[item.name] = {
+            price: toKnutas(item.g, item.s, item.k),
+            image: item.image
+        };
+
+        basket[item.name] = 0;
+    });
+
+    createItemCards();
+    updateDisplay();
+}
+function createCustomItemCard() {
+    const row = document.createElement("div");
+    row.className = "item-row custom-item-card";
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "item-placeholder";
+    placeholder.textContent = "?";
+
+    const label = document.createElement("div");
+    label.className = "item-name";
+
+    const nameText = document.createElement("div");
+    nameText.className = "product-name";
+    nameText.textContent = "Cita prece";
+
+    const priceText = document.createElement("div");
+    priceText.className = "product-price";
+    priceText.textContent = "Ievadīt cenu";
+
+    label.appendChild(nameText);
+    label.appendChild(priceText);
+
+    row.appendChild(placeholder);
+    row.appendChild(label);
+
+    row.onclick = addCustomItem;
+
+    itemsDiv.appendChild(row);
+}
+
+function addCustomItem() {
+    const g = parseInt(prompt("Cik galeoni?", "0")) || 0;
+    const s = parseInt(prompt("Cik sirpi?", "0")) || 0;
+    const k = parseInt(prompt("Cik knutas?", "0")) || 0;
+
+    const price = toKnutas(g, s, k);
+
+    if (price <= 0) {
+        alert("Cena nevar būt 0.");
+        return;
+    }
+
+    const customKey = "custom-" + price;
+
+    if (!items[customKey]) {
+        items[customKey] = {
+            displayName: "Cita prece (" + formatMoney(price) + ")",
+            price: price,
+            image: ""
+        };
+
+        basket[customKey] = 0;
+    }
+
+    addItem(customKey);
+}
+function createItemCards() {
+    itemsDiv.innerHTML = "";
+
+    for (let name in items) {
+        const row = document.createElement("div");
+        row.className = "item-row";
+
+        if (items[name].image) {
+            const img = document.createElement("img");
+            img.src = items[name].image;
+            row.appendChild(img);
+        } else {
+            const placeholder = document.createElement("div");
+            placeholder.className = "item-placeholder";
+            placeholder.textContent = "✦";
+            row.appendChild(placeholder);
+        }
+
+        const label = document.createElement("div");
+        label.className = "item-name";
+
+        const nameText = document.createElement("div");
+        nameText.className = "product-name";
+        nameText.textContent = name;
+
+        const priceText = document.createElement("div");
+        priceText.className = "product-price";
+        priceText.textContent = formatMoney(items[name].price);
+
+        label.appendChild(nameText);
+        label.appendChild(priceText);
+
+        row.appendChild(label);
+
+        row.onclick = () => {
+            addItem(name);
+
+            row.classList.add("added");
+            setTimeout(() => {
+                row.classList.remove("added");
+            }, 180);
+        };
+
+        itemsDiv.appendChild(row);
+    }
+    createCustomItemCard();
+}
+
+loadItemsFromSheet();
+
+function addItem(name) {
+    basket[name]++;
+    totalKnutas += items[name].price;
+    updateDisplay();
+    calculateChange();
+}
+
+function removeItem(name) {
+    if (basket[name] > 0) {
+        basket[name]--;
+        totalKnutas -= items[name].price;
+        updateDisplay();
+        calculateChange();
+    }
+}
+
+function updateDisplay() {
+    const basketDiv = document.getElementById("basket");
+    basketDiv.innerHTML = "";
+
+    let hasItems = false;
+
+    for (let name in basket) {
+        if (basket[name] > 0) {
+            hasItems = true;
+
+            const line = document.createElement("div");
+            line.className = "basket-line";
+
+            const text = document.createElement("span");
+            text.className = "basket-text";
+            text.textContent = items[name].displayName || name;
+
+            const controls = document.createElement("div");
+            controls.className = "basket-controls";
+
+            const minus = document.createElement("button");
+            minus.textContent = "-";
+            minus.className = "remove-btn";
+            minus.onclick = () => removeItem(name);
+
+            const quantity = document.createElement("span");
+            quantity.className = "basket-quantity";
+            quantity.textContent = basket[name];
+
+            const plus = document.createElement("button");
+            plus.textContent = "+";
+            plus.className = "add-btn";
+            plus.onclick = () => addItem(name);
+
+            controls.appendChild(minus);
+            controls.appendChild(quantity);
+            controls.appendChild(plus);
+
+            line.appendChild(text);
+            line.appendChild(controls);
+
+            basketDiv.appendChild(line);
+        }
+    }
+
+    if (!hasItems) {
+        const emptyMessage = document.createElement("div");
+        emptyMessage.className = "empty-basket";
+        emptyMessage.innerHTML = "🧺<br>Grozs ir tukšs.<br>Pieskaries precei, lai to pievienotu.";
+        basketDiv.appendChild(emptyMessage);
+    }
+
+    document.getElementById("total").textContent =
+        "Kopā jāmaksā: " + formatMoney(totalKnutas);
+}
+
+function calculateChange() {
+    const g = parseInt(document.getElementById("paidG").value) || 0;
+    const s = parseInt(document.getElementById("paidS").value) || 0;
+    const k = parseInt(document.getElementById("paidK").value) || 0;
+
+    const paid = toKnutas(g, s, k);
+
+    if (paid < totalKnutas) {
+        const missing = totalKnutas - paid;
+        document.getElementById("change").textContent =
+            "Pietrūkst: " + formatMoney(missing);
+        return;
+    }
+
+    const change = paid - totalKnutas;
+
+    document.getElementById("change").textContent =
+        "Atlikums: " + formatMoney(change);
+}
+
+function changePaid(id, amount) {
+    const input = document.getElementById(id);
+    let current = parseInt(input.value) || 0;
+
+    current += amount;
+
+    if (current < 0) {
+        current = 0;
+    }
+
+    input.value = current;
+    calculateChange();
+}
+
+function setExactPayment() {
+    const exact = fromKnutas(totalKnutas);
+
+    document.getElementById("paidG").value = exact.g;
+    document.getElementById("paidS").value = exact.s;
+    document.getElementById("paidK").value = exact.k;
+
+    calculateChange();
+}
+
+function clearPaid() {
+    document.getElementById("paidG").value = 0;
+    document.getElementById("paidS").value = 0;
+    document.getElementById("paidK").value = 0;
+
+    calculateChange();
+}  
+  
+  
+function checkout() {
+    if (totalKnutas === 0) {
+        alert("Nav izvēlēti produkti!");
+        return;
+    }
+
+    let receipt = "Čeks\n\n";
+
+    for (let name in basket) {
+        if (basket[name] > 0) {
+            const lineTotal = basket[name] * items[name].price;
+            const displayName = items[name].displayName || name;
+            receipt += `${displayName} x${basket[name]} - ${formatMoney(lineTotal)}\n`;
+        }
+    }
+
+    receipt += "\nKOPĀ: " + formatMoney(totalKnutas);
+
+    alert(receipt);
+}
+
+function resetBasket() {
+    totalKnutas = 0;
+
+    for (let name in basket) {
+        basket[name] = 0;
+    }
+
+    updateDisplay();
+
+    document.getElementById("paidG").value = 0;
+    document.getElementById("paidS").value = 0;
+    document.getElementById("paidK").value = 0;
+
+    document.getElementById("change").textContent = "Atlikums: 0G 0S 0K";
+}
+function magicTitle() {
+    const header = document.querySelector(".shop-header");
+    const subtitle = document.querySelector(".shop-subtitle");
+
+    const messages = [
+        "Pieskaries precei, lai to pievienotu grozam",
+        "Maģiskās cenas tikai šodien!",
+        "Uzmanību: vardes var lēkāt pašas",
+        "Asniņa sveicieni burvju preču pārdevējiem!!!",
+        "Laipni lūgti saldākajā burvju veikalā!"
+    ];
+
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    subtitle.textContent = randomMessage;
+
+    header.classList.add("magic");
+
+    setTimeout(() => {
+        header.classList.remove("magic");
+    }, 500);
+}
+// Show empty basket message when page loads
+updateDisplay();
+function showComingSoonMessage() {
+    alert("IZSTRĀDES STADIJĀ\nJa kaut ko vajag labot, zvani Asniņam: 25900970");
+}
+function filterItems() {
+    const searchText = document.getElementById("searchInput").value.toLowerCase();
+    const cards = document.querySelectorAll(".item-row");
+
+    cards.forEach(card => {
+        const productName = card.textContent.toLowerCase();
+
+        if (productName.includes(searchText)) {
+            card.style.display = "flex";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+function clearSearch() {
+    const searchInput = document.getElementById("searchInput");
+
+    searchInput.value = "";
+    filterItems();
+    searchInput.focus();
+}
+</script>
+
+</body>
+  
+
