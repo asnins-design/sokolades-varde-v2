@@ -416,10 +416,16 @@ button {
   <div class="shop-subtitle">Pieskaries precei, lai to pievienotu grozam</div>  
   </div>
     <div class="child-box">
+      <label for="houseSelect">Tornis:</label>
+
+      <select id="houseSelect" onchange="selectHouse()">
+        <option value="">Izvēlies torni...</option>
+      </select>
+
       <label for="childSelect">Pircējs:</label>
 
-      <select id="childSelect" onchange="selectChild()">
-        <option value="">Izvēlies bērnu...</option>
+      <select id="childSelect" onchange="selectChild()" disabled>
+        <option value="">Vispirms izvēlies torni...</option>
       </select>
 
       <div id="childBalance">
@@ -584,7 +590,7 @@ async function loadItemsFromSheet() {
         });
 
         createItemCards();
-        loadChildrenDropdown();
+        loadHouseDropdown();
         updateDisplay();
 
     } catch (error) {
@@ -912,17 +918,66 @@ function clearSearch() {
     filterItems();
     searchInput.focus();
 }
-function loadChildrenDropdown() {
+let selectedHouse = "";
+
+function loadHouseDropdown() {
+    const houseSelect = document.getElementById("houseSelect");
     const childSelect = document.getElementById("childSelect");
 
+    houseSelect.innerHTML = `<option value="">Izvēlies māju...</option>`;
+    childSelect.innerHTML = `<option value="">Vispirms izvēlies māju...</option>`;
+    childSelect.disabled = true;
+
+    const houses = [...new Set(children.map(child => child.house))]
+        .filter(house => house)
+        .sort((a, b) => a.localeCompare(b, "lv"));
+
+    houses.forEach(house => {
+        const option = document.createElement("option");
+        option.value = house;
+        option.textContent = house;
+        houseSelect.appendChild(option);
+    });
+}
+
+function selectHouse() {
+    selectedHouse = document.getElementById("houseSelect").value;
+    selectedChild = null;
+
+    const childSelect = document.getElementById("childSelect");
+
+    childSelect.innerHTML = "";
+
+    if (!selectedHouse) {
+        childSelect.innerHTML = `<option value="">Vispirms izvēlies māju...</option>`;
+        childSelect.disabled = true;
+        updateChildBalance();
+        return;
+    }
+
+    childSelect.disabled = false;
     childSelect.innerHTML = `<option value="">Izvēlies bērnu...</option>`;
 
-    children.forEach(child => {
+    const filteredChildren = children
+        .filter(child => child.house === selectedHouse)
+        .sort((a, b) => {
+            const surnameCompare = a.surname.localeCompare(b.surname, "lv");
+
+            if (surnameCompare !== 0) {
+                return surnameCompare;
+            }
+
+            return a.name.localeCompare(b.name, "lv");
+        });
+
+    filteredChildren.forEach(child => {
         const option = document.createElement("option");
         option.value = child.childId;
-        option.textContent = `${child.name} ${child.surname} (${child.house})`;
+        option.textContent = `${child.surname} ${child.name}`;
         childSelect.appendChild(option);
     });
+
+    updateChildBalance();
 }
 
 function selectChild() {
@@ -944,7 +999,6 @@ function updateChildBalance() {
     balanceDiv.textContent =
         `Atlikums: ${selectedChild.balanceG}G ${selectedChild.balanceS}S ${selectedChild.balanceK}K`;
 }
-
 async function buyForChild() {
     if (!selectedChild) {
         alert("Vispirms izvēlies bērnu!");
