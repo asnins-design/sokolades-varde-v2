@@ -556,6 +556,7 @@ const itemsDiv = document.getElementById("items");
 async function loadItemsFromSheet() {
     try {
         const response = await fetch(SHEET_URL);
+        console.log("Fetching from:", SHEET_URL);
         const data = await response.json();
 
         const sheetItems = data.items;
