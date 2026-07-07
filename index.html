@@ -1028,6 +1028,23 @@ async function buyForChild() {
         }
     }
 
+    const itemList = boughtItems
+        .map(item => `${item.name} x${item.quantity}`)
+        .join("\n");
+
+    const confirmationMessage =
+        `Apstiprināt pirkumu?\n\n` +
+        `Pircējs: ${selectedChild.name} ${selectedChild.surname}\n` +
+        `Māja: ${selectedChild.house}\n\n` +
+        `Preces:\n${itemList}\n\n` +
+        `Kopā: ${formatMoney(totalKnutas)}`;
+
+    const confirmed = confirm(confirmationMessage);
+
+    if (!confirmed) {
+        return;
+    }
+
     const purchaseData = {
         childId: selectedChild.childId,
         totalKnutas: totalKnutas,
