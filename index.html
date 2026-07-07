@@ -356,7 +356,32 @@ button {
 .child-box label {
     font-weight: bold;
 }
+.login-box {
+    max-width: 350px;
+    margin: 80px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
 
+.login-box input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    margin: 12px 0;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    font-size: 18px;
+    text-align: center;
+}
+
+.login-box button {
+    width: 100%;
+    background: #5B2C6F;
+    color: white;
+}
 #houseSelect,
 #childSelect {
     width: 100%;
@@ -411,7 +436,20 @@ button {
 
 <!SEIT SAKAS ISTAIS KODS>
 
-<div class="container">
+<div id="loginBox" class="login-box">
+  <h2>🔐 Kases piekļuve</h2>
+
+  <input 
+    type="password" 
+    id="pinInput" 
+    placeholder="Ievadi PIN"
+    inputmode="numeric"
+  >
+
+  <button onclick="loginWithPin()">Ienākt</button>
+</div>
+
+<div class="container" id="appContainer" style="display:none;">
 
   <div class="shop-header" onclick="magicTitle()">
   <div class="shop-title">✨ Šokolādes Varde ✨</div>
@@ -552,7 +590,7 @@ let basket = {};
 let totalKnutas = 0;
 let children = [];
 let selectedChild = null;
-    
+let cashierPin = "";    
 for (let name in items) {
     basket[name] = 0;
 }
@@ -563,10 +601,12 @@ const itemsDiv = document.getElementById("items");
 
 async function loadItemsFromSheet() {
     try {
-        const response = await fetch(SHEET_URL);
+        const response = await fetch(SHEET_URL + "?pin=" + encodeURIComponent(cashierPin));
         console.log("Fetching from:", SHEET_URL);
         const data = await response.json();
-
+        if (!data.success) {
+            throw new Error(data.message || "Nepareizs PIN");
+        }
         const sheetItems = data.items;
         children = data.children;
 
@@ -594,10 +634,11 @@ async function loadItemsFromSheet() {
         createItemCards();
         loadHouseDropdown();
         updateDisplay();
-
+    return true;
     } catch (error) {
         console.error("Could not load data:", error);
-
+        alert(error.message || "Neizdevās ielādēt datus.");
+        return false;
         itemsDiv.innerHTML = `
             <div class="loading-message">
                 Neizdevās ielādēt preces vai bērnus 😭<br>
@@ -710,7 +751,7 @@ function createItemCards() {
     createCustomItemCard();
 }
 
-loadItemsFromSheet();
+
 
 function addItem(name) {
     basket[name]++;
@@ -1046,6 +1087,7 @@ async function buyForChild() {
     }
 
     const purchaseData = {
+        pin: cashierPin,
         childId: selectedChild.childId,
         totalKnutas: totalKnutas,
         items: boughtItems
@@ -1074,7 +1116,25 @@ async function buyForChild() {
         console.error(error);
     }
 }
+async function loginWithPin() {
+    const pinInput = document.getElementById("pinInput");
+    cashierPin = pinInput.value.trim();
 
+    if (!cashierPin) {
+        alert("Ievadi PIN!");
+        return;
+    }
+
+    const success = await loadItemsFromSheet();
+
+    if (success === false) {
+        cashierPin = "";
+        return;
+    }
+
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("appContainer").style.display = "block";
+}
     
 </script>
 
