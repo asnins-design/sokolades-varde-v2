@@ -926,8 +926,8 @@ function loadHouseDropdown() {
     const houseSelect = document.getElementById("houseSelect");
     const childSelect = document.getElementById("childSelect");
 
-    houseSelect.innerHTML = `<option value="">Izvēlies māju...</option>`;
-    childSelect.innerHTML = `<option value="">Vispirms izvēlies māju...</option>`;
+    houseSelect.innerHTML = `<option value="">Izvēlies torni...</option>`;
+    childSelect.innerHTML = `<option value="">Vispirms izvēlies torni...</option>`;
     childSelect.disabled = true;
 
     const houses = [...new Set(children.map(child => child.house))]
@@ -951,7 +951,7 @@ function selectHouse() {
     childSelect.innerHTML = "";
 
     if (!selectedHouse) {
-        childSelect.innerHTML = `<option value="">Vispirms izvēlies māju...</option>`;
+        childSelect.innerHTML = `<option value="">Vispirms izvēlies torni...</option>`;
         childSelect.disabled = true;
         updateChildBalance();
         return;
