@@ -523,8 +523,7 @@ const KNUTAS_IN_GALEON = KNUTAS_IN_SIRPS * SIRPS_IN_GALEON;
 function toKnutas(g = 0, s = 0, k = 0) {
     return g * KNUTAS_IN_GALEON + s * KNUTAS_IN_SIRPS + k;
 }
-let children = [];
-let selectedChild = null;
+
     
 function fromKnutas(total) {
     const g = Math.floor(total / KNUTAS_IN_GALEON);
@@ -541,10 +540,11 @@ function formatMoney(knutas) {
 
 // Items with images
 let items = {};
-
 let basket = {};
 let totalKnutas = 0;
-
+let children = [];
+let selectedChild = null;
+    
 for (let name in items) {
     basket[name] = 0;
 }
@@ -554,36 +554,48 @@ const SHEET_URL = "https://script.google.com/macros/s/AKfycbxPv8gdrJuzeJR0epMYjb
 const itemsDiv = document.getElementById("items");
 
 async function loadItemsFromSheet() {
-    const response = await fetch(SHEET_URL);
-    const data = await response.json();
+    try {
+        const response = await fetch(SHEET_URL);
+        const data = await response.json();
 
-    const sheetItems = data.items;
-    children = data.children;
+        const sheetItems = data.items;
+        children = data.children;
 
-    items = {};
-    basket = {};
-    totalKnutas = 0;
+        items = {};
+        basket = {};
+        totalKnutas = 0;
 
-    itemsDiv.innerHTML = "";
+        itemsDiv.innerHTML = "";
 
-    sheetItems.sort((a, b) => {
-        const priceA = toKnutas(a.g, a.s, a.k);
-        const priceB = toKnutas(b.g, b.s, b.k);
-        return priceB - priceA;
-    });
+        sheetItems.sort((a, b) => {
+            const priceA = toKnutas(a.g, a.s, a.k);
+            const priceB = toKnutas(b.g, b.s, b.k);
+            return priceB - priceA;
+        });
 
-    sheetItems.forEach(item => {
-        items[item.name] = {
-            price: toKnutas(item.g, item.s, item.k),
-            image: item.image
-        };
+        sheetItems.forEach(item => {
+            items[item.name] = {
+                price: toKnutas(item.g, item.s, item.k),
+                image: item.image
+            };
 
-        basket[item.name] = 0;
-    });
+            basket[item.name] = 0;
+        });
 
-    createItemCards();
-    loadChildrenDropdown();
-    updateDisplay();
+        createItemCards();
+        loadChildrenDropdown();
+        updateDisplay();
+
+    } catch (error) {
+        console.error("Could not load data:", error);
+
+        itemsDiv.innerHTML = `
+            <div class="loading-message">
+                Neizdevās ielādēt preces vai bērnus 😭<br>
+                Pārbaudi Apps Script linku.
+            </div>
+        `;
+    }
 }
 function createCustomItemCard() {
     const row = document.createElement("div");
