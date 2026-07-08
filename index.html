@@ -446,8 +446,73 @@ button {
     text-align: left;
     font-size: 16px;
 }
+#buyButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+#historyButton {
+    margin-top: 10px;
+    background: #8E6B3A;
+    color: white;
+}
 
-/* Mobile adjustments */
+.history-panel {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    z-index: 9999;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.history-header h3 {
+    margin: 0;
+}
+
+.history-entry {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #f4f1ea;
+}
+
+.history-entry-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.history-entry-details {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 8px;
+    white-space: pre-line;
+}
+
+.reverse-btn {
+    background: #A94442;
+    color: white;
+    padding: 8px 10px;
+    font-size: 14px;
+}
+
+.reverse-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 </style>
 </head>
@@ -563,9 +628,18 @@ button {
           Atlikums: 0G 0S 0K
         </div>
       </div>
-      <button class="action-btn" onclick="buyForChild()">PIRKT</button>
+      <button id="buyButton" onclick="buyForChild()">PIRKT</button>
       <button class="action-btn" style="background:#636e72;" onclick="resetBasket()">JAUNS PIRKUMS</button>
-
+      <button id="historyButton" onclick="toggleSessionHistory()">Pirkumu vēsture</button>
+        
+      <div id="historyPanel" class="history-panel" style="display:none;">
+          <div class="history-header">
+          <h3>Pirkumu vēsture</h3>
+          <button onclick="toggleSessionHistory()">✕</button>
+          </div>
+        
+          <div id="historyList"></div>
+      </div>
       <button class="sheet-btn" onclick="showComingSoonMessage()">
           Mainīt preces
       </button>
@@ -588,6 +662,9 @@ button {
   
 <script>
 // Currency system
+let sessionHistory = [];
+let isReversingTransaction = false;
+    
 const KNUTAS_IN_SIRPS = 5;
 const SIRPS_IN_GALEON = 5;
 const KNUTAS_IN_GALEON = KNUTAS_IN_SIRPS * SIRPS_IN_GALEON;
@@ -616,7 +693,8 @@ let basket = {};
 let totalKnutas = 0;
 let children = [];
 let selectedChild = null;
-let cashierPin = "";    
+let cashierPin = "";   
+let isSavingPurchase = false;
 for (let name in items) {
     basket[name] = 0;
 }
@@ -672,6 +750,16 @@ async function loadItemsFromSheet() {
             </div>
         `;
     }
+}
+function setBuyButtonSaving(isSaving) {
+    const button = document.getElementById("buyButton");
+
+    if (!button) {
+        return;
+    }
+
+    button.disabled = isSaving;
+    button.textContent = isSaving ? "Saglabā..." : "PIRKT";
 }
 function createCustomItemCard() {
     const row = document.createElement("div");
@@ -1074,6 +1162,10 @@ function updateChildBalance() {
         `Depozīts: ${selectedChild.depositBalanceText} €`;
 }
 async function buyForChild() {
+    if (isSavingPurchase) {
+        return;
+    }
+
     if (!selectedChild) {
         alert("Vispirms izvēlies bērnu!");
         return;
@@ -1107,7 +1199,7 @@ async function buyForChild() {
     const confirmationMessage =
         `Apstiprināt pirkumu?\n\n` +
         `Pircējs: ${selectedChild.name} ${selectedChild.surname}\n` +
-        `Tornis: ${selectedChild.house}\n\n` +
+        `Māja: ${selectedChild.house}\n\n` +
         `Preces:\n${itemList}\n\n` +
         `Kopā: ${formatMoney(totalKnutas)}`;
 
@@ -1117,6 +1209,9 @@ async function buyForChild() {
         return;
     }
 
+    isSavingPurchase = true;
+    setBuyButtonSaving(true);
+
     const purchaseData = {
         pin: cashierPin,
         childId: selectedChild.childId,
@@ -1125,13 +1220,31 @@ async function buyForChild() {
     };
 
     try {
-        await fetch(SHEET_URL, {
+        const response = await fetch(SHEET_URL, {
             method: "POST",
             body: JSON.stringify(purchaseData)
         });
 
-        alert("Pirkums saglabāts!");
+        const result = await response.json();
 
+        if (!result.success) {
+            alert(result.message || "Kļūda! Pirkums netika saglabāts.");
+            return;
+        }
+
+        alert("Pirkums saglabāts!");
+        addSessionHistory({
+            type: "purchase",
+            childId: selectedChild.childId,
+            childName: selectedChild.name,
+            childSurname: selectedChild.surname,
+            house: selectedChild.house,
+            totalKnutas: totalKnutas,
+            items: boughtItems.map(item => ({
+                name: item.name,
+                quantity: item.quantity
+            }))
+        });
         selectedChild.balanceKnutas -= totalKnutas;
 
         const newBalance = fromKnutas(selectedChild.balanceKnutas);
@@ -1141,11 +1254,18 @@ async function buyForChild() {
 
         updateChildBalance();
         resetBasket();
-        resetBuyerSelection();
+
+        if (typeof resetBuyerSelection === "function") {
+            resetBuyerSelection();
+        }
 
     } catch (error) {
         alert("Kļūda! Pirkums netika saglabāts.");
         console.error(error);
+
+    } finally {
+        isSavingPurchase = false;
+        setBuyButtonSaving(false);
     }
 }
 async function loginWithPin() {
@@ -1266,7 +1386,15 @@ async function withdrawFromDeposit() {
             `Pievienots: ${result.magicG}G ${result.magicS}S ${result.magicK}K\n` +
             `Noņemts no depozīta: ${result.usedDepositText} €`
         );
-
+        addSessionHistory({
+            type: "deposit",
+            childId: selectedChild.childId,
+            childName: selectedChild.name,
+            childSurname: selectedChild.surname,
+            house: selectedChild.house,
+            usedDepositCents: result.usedDepositCents,
+            magicKnutas: result.magicKnutas
+        });
         await refreshChildrenOnly();
 
     } catch (error) {
@@ -1332,6 +1460,183 @@ function resetBuyerSelection() {
 
     updateChildBalance();
 }
+function addSessionHistory(entry) {
+    sessionHistory.unshift({
+        ...entry,
+        localId: "tx-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+        time: new Date().toLocaleTimeString("lv-LV", {
+            hour: "2-digit",
+            minute: "2-digit"
+        }),
+        reversed: false
+    });
+
+    renderSessionHistory();
+}
+function toggleSessionHistory() {
+    const panel = document.getElementById("historyPanel");
+
+    if (!panel) {
+        return;
+    }
+
+    if (panel.style.display === "none") {
+        panel.style.display = "block";
+        renderSessionHistory();
+    } else {
+        panel.style.display = "none";
+    }
+}
+function renderSessionHistory() {
+    const list = document.getElementById("historyList");
+
+    if (!list) {
+        return;
+    }
+
+    list.innerHTML = "";
+
+    if (sessionHistory.length === 0) {
+        list.innerHTML = `
+            <div class="empty-basket">
+                Šajā sesijā vēl nav pirkumu vai depozīta izņemšanu.
+            </div>
+        `;
+        return;
+    }
+
+    sessionHistory.forEach(entry => {
+        const div = document.createElement("div");
+        div.className = "history-entry";
+
+        const title = document.createElement("div");
+        title.className = "history-entry-title";
+
+        const details = document.createElement("div");
+        details.className = "history-entry-details";
+
+        if (entry.type === "purchase") {
+            title.textContent =
+                `${entry.time} · PIRKUMS · ${entry.childName} ${entry.childSurname}`;
+
+            const itemText = entry.items
+                .map(item => `${item.name} x${item.quantity}`)
+                .join("\n");
+
+            details.textContent =
+                `Māja: ${entry.house}\n` +
+                `Kopā: ${formatMoney(entry.totalKnutas)}\n` +
+                itemText;
+        }
+
+        if (entry.type === "deposit") {
+            title.textContent =
+                `${entry.time} · DEPOZĪTS · ${entry.childName} ${entry.childSurname}`;
+
+            details.textContent =
+                `Māja: ${entry.house}\n` +
+                `No depozīta: ${centsToEurosText(entry.usedDepositCents)} €\n` +
+                `Pievienots: ${formatMoney(entry.magicKnutas)}`;
+        }
+
+        const button = document.createElement("button");
+        button.className = "reverse-btn";
+        button.textContent = entry.reversed ? "Atcelts" : "Atcelt";
+        button.disabled = entry.reversed || isReversingTransaction;
+        button.onclick = () => reverseSessionTransaction(entry.localId);
+
+        div.appendChild(title);
+        div.appendChild(details);
+        div.appendChild(button);
+
+        list.appendChild(div);
+    });
+}
+async function reverseSessionTransaction(localId) {
+    if (isReversingTransaction) {
+        return;
+    }
+
+    const entry = sessionHistory.find(item => item.localId === localId);
+
+    if (!entry || entry.reversed) {
+        return;
+    }
+
+    let message = "";
+
+    if (entry.type === "purchase") {
+        message =
+            `Atcelt šo pirkumu?\n\n` +
+            `${entry.childName} ${entry.childSurname}\n` +
+            `Kopā: ${formatMoney(entry.totalKnutas)}\n\n` +
+            `Tas pievienos naudu atpakaļ bērna atlikumam.`;
+    }
+
+    if (entry.type === "deposit") {
+        message =
+            `Atcelt šo depozīta izņemšanu?\n\n` +
+            `${entry.childName} ${entry.childSurname}\n` +
+            `No depozīta: ${centsToEurosText(entry.usedDepositCents)} €\n` +
+            `Maģiskā nauda: ${formatMoney(entry.magicKnutas)}\n\n` +
+            `Tas noņems šo maģisko naudu un atgriezīs depozītu.`;
+    }
+
+    const confirmed = confirm(message);
+
+    if (!confirmed) {
+        return;
+    }
+
+    isReversingTransaction = true;
+    renderSessionHistory();
+
+    let payload = {
+        pin: cashierPin,
+        childId: entry.childId
+    };
+
+    if (entry.type === "purchase") {
+        payload.action = "reversePurchase";
+        payload.totalKnutas = entry.totalKnutas;
+        payload.items = entry.items;
+    }
+
+    if (entry.type === "deposit") {
+        payload.action = "reverseDepositWithdrawal";
+        payload.magicKnutas = entry.magicKnutas;
+        payload.usedDepositCents = entry.usedDepositCents;
+    }
+
+    try {
+        const response = await fetch(SHEET_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            alert(result.message || "Neizdevās atcelt darījumu.");
+            return;
+        }
+
+        entry.reversed = true;
+
+        alert("Darījums atcelts!");
+
+        await loadItemsFromSheet();
+
+    } catch (error) {
+        alert("Kļūda! Darījumu neizdevās atcelt.");
+        console.error(error);
+
+    } finally {
+        isReversingTransaction = false;
+        renderSessionHistory();
+    }
+}
+
 </script>
 
 </body>
