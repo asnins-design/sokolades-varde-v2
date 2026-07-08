@@ -1141,6 +1141,7 @@ async function buyForChild() {
 
         updateChildBalance();
         resetBasket();
+        resetBuyerSelection();
 
     } catch (error) {
         alert("Kļūda! Pirkums netika saglabāts.");
@@ -1312,6 +1313,24 @@ async function refreshChildrenOnly() {
         console.error("Could not refresh children:", error);
         return false;
     }
+}
+function resetBuyerSelection() {
+    selectedHouse = "";
+    selectedChild = null;
+
+    const houseSelect = document.getElementById("houseSelect");
+    const childSelect = document.getElementById("childSelect");
+
+    if (houseSelect) {
+        houseSelect.value = "";
+    }
+
+    if (childSelect) {
+        childSelect.innerHTML = `<option value="">Vispirms izvēlies māju...</option>`;
+        childSelect.disabled = true;
+    }
+
+    updateChildBalance();
 }
 </script>
 
