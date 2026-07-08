@@ -513,7 +513,32 @@ button {
     opacity: 0.5;
     cursor: not-allowed;
 }
+#buyButton,
+#historyButton {
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
 
+#buyButton {
+    color: white;
+}
+
+#historyButton {
+    color: white;
+}
+
+#buyButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 </style>
 </head>
 
@@ -628,8 +653,12 @@ button {
           Atlikums: 0G 0S 0K
         </div>
       </div>
-      <button id="buyButton" onclick="buyForChild()">PIRKT</button>
+      <button id="buyButton" class="buy-btn" onclick="buyForChild()">PIRKT</button>
       <button class="action-btn" style="background:#636e72;" onclick="resetBasket()">JAUNS PIRKUMS</button>
+
+      <button class="sheet-btn" onclick="showComingSoonMessage()">
+          Mainīt preces
+      </button>
       <button id="historyButton" onclick="toggleSessionHistory()">Pirkumu vēsture</button>
         
       <div id="historyPanel" class="history-panel" style="display:none;">
@@ -640,9 +669,6 @@ button {
         
           <div id="historyList"></div>
       </div>
-      <button class="sheet-btn" onclick="showComingSoonMessage()">
-          Mainīt preces
-      </button>
 
     <div class="footer-credit">
       Kases sistēmu izstrādājis Asniņš ✨
