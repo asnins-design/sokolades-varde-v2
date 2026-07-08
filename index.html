@@ -1266,22 +1266,51 @@ async function withdrawFromDeposit() {
             `Noņemts no depozīta: ${result.usedDepositText} €`
         );
 
-        selectedChild.balanceKnutas += result.magicKnutas;
-
-        const newMagicBalance = fromKnutas(selectedChild.balanceKnutas);
-        selectedChild.balanceG = newMagicBalance.g;
-        selectedChild.balanceS = newMagicBalance.s;
-        selectedChild.balanceK = newMagicBalance.k;
-
-        selectedChild.depositBalanceCents -= result.usedDepositCents;
-        selectedChild.depositBalanceText = centsToEurosText(selectedChild.depositBalanceCents);
-        selectedChild.depositBalanceEuros = Number(selectedChild.depositBalanceText);
-
-        updateChildBalance();
+        await refreshChildrenOnly();
 
     } catch (error) {
         alert("Kļūda! Depozīts netika izņemts.");
         console.error(error);
+    }
+}
+async function refreshChildrenOnly() {
+    if (!cashierPin) {
+        return false;
+    }
+
+    if (!selectedChild) {
+        return false;
+    }
+
+    const selectedId = selectedChild.childId;
+
+    try {
+        const response = await fetch(
+            SHEET_URL + "?pin=" + encodeURIComponent(cashierPin) + "&t=" + Date.now()
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || "Neizdevās pārlādēt datus.");
+        }
+
+        children = data.children;
+
+        const updatedChild = children.find(child =>
+            String(child.childId).trim() === String(selectedId).trim()
+        );
+
+        if (updatedChild) {
+            selectedChild = updatedChild;
+            updateChildBalance();
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error("Could not refresh children:", error);
+        return false;
     }
 }
 </script>
