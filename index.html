@@ -382,6 +382,14 @@ button {
     background: #5B2C6F;
     color: white;
 }
+#childBalance,
+#childDeposit {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    background: #f4f1ea;
+    font-weight: bold;
+}
 #houseSelect,
 #childSelect {
     width: 100%;
@@ -468,9 +476,13 @@ button {
         <option value="">Vispirms izvēlies torni...</option>
       </select>
 
-      <div id="childBalance">
-        Atlikums: -
-      </div>
+    <div id="childBalance">
+      Maģiskā nauda: -
+    </div>
+    
+    <div id="childDeposit">
+      Depozīts: -
+    </div>
     </div>
     <div class="search-box">
       <input 
@@ -1033,14 +1045,19 @@ function selectChild() {
 
 function updateChildBalance() {
     const balanceDiv = document.getElementById("childBalance");
+    const depositDiv = document.getElementById("childDeposit");
 
     if (!selectedChild) {
-        balanceDiv.textContent = "Atlikums: -";
+        balanceDiv.textContent = "Maģiskā nauda: -";
+        depositDiv.textContent = "Depozīts: -";
         return;
     }
 
     balanceDiv.textContent =
-        `Atlikums: ${selectedChild.balanceG}G ${selectedChild.balanceS}S ${selectedChild.balanceK}K`;
+        `Maģiskā nauda: ${selectedChild.balanceG}G ${selectedChild.balanceS}S ${selectedChild.balanceK}K`;
+
+    depositDiv.textContent =
+        `Depozīts: ${selectedChild.depositBalanceText} €`;
 }
 async function buyForChild() {
     if (!selectedChild) {
