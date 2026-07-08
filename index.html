@@ -405,6 +405,20 @@ button {
     font-weight: bold;
     color: #5B2C6F;
 }
+#childDeposit {
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+#childDeposit:hover {
+    transform: scale(1.02);
+}
+
+#childDeposit::after {
+    content: "  ✦ izņemt";
+    font-size: 13px;
+    opacity: 0.65;
+}
 @keyframes magicPop {
     0% {
         transform: scale(1);
@@ -480,7 +494,7 @@ button {
       Maģiskā nauda: -
     </div>
     
-    <div id="childDeposit">
+    <div id="childDeposit" onclick="withdrawFromDeposit()" title="Klikšķini, lai izņemtu no depozīta">
       Depozīts: -
     </div>
     </div>
@@ -1152,7 +1166,124 @@ async function loginWithPin() {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("appContainer").style.display = "block";
 }
-    
+function parseEuroInputToCents(input) {
+    const cleaned = String(input || "")
+        .replace(",", ".")
+        .replace(/[^\d.]/g, "");
+
+    const euros = parseFloat(cleaned);
+
+    if (isNaN(euros)) {
+        return 0;
+    }
+
+    return Math.round(euros * 100);
+}
+
+function centsToEurosText(cents) {
+    return (cents / 100).toFixed(2);
+}   
+async function withdrawFromDeposit() {
+    if (!selectedChild) {
+        alert("Vispirms izvēlies bērnu!");
+        return;
+    }
+
+    const depositCents = Number(selectedChild.depositBalanceCents) || 0;
+
+    if (depositCents < 6) {
+        alert("Bērnam depozītā nepietiek naudas.");
+        return;
+    }
+
+    const input = prompt(
+        `Cik euro izņemt no depozīta?\n\nPieejams: ${selectedChild.depositBalanceText} €`,
+        "2"
+    );
+
+    if (input === null) {
+        return;
+    }
+
+    const requestedEuroCents = parseEuroInputToCents(input);
+
+    if (requestedEuroCents <= 0) {
+        alert("Ievadi derīgu summu.");
+        return;
+    }
+
+    // 1 Knuta = 0.06 EUR = 6 cents
+    const magicKnutas = Math.floor(requestedEuroCents / 6);
+    const availableMagicKnutas = Math.floor(depositCents / 6);
+
+    if (magicKnutas <= 0) {
+        alert("Summa ir par mazu. Mazākā iespējamā summa ir 0.06 €.");
+        return;
+    }
+
+    if (magicKnutas > availableMagicKnutas) {
+        alert("Bērnam depozītā nav tik daudz naudas.");
+        return;
+    }
+
+    const usedDepositCents = magicKnutas * 6;
+    const magic = fromKnutas(magicKnutas);
+
+    const confirmed = confirm(
+        `Izņemt no depozīta?\n\n` +
+        `Pircējs: ${selectedChild.name} ${selectedChild.surname}\n` +
+        `Depozītā šobrīd: ${selectedChild.depositBalanceText} €\n\n` +
+        `Ievadīts: ${centsToEurosText(requestedEuroCents)} €\n` +
+        `No depozīta noņems: ${centsToEurosText(usedDepositCents)} €\n` +
+        `Pievienos maģisko naudu: ${magic.g}G ${magic.s}S ${magic.k}K`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(SHEET_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "depositWithdrawal",
+                pin: cashierPin,
+                childId: selectedChild.childId,
+                requestedEuroCents: requestedEuroCents
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            alert(result.message || "Neizdevās izņemt depozītu.");
+            return;
+        }
+
+        alert(
+            `Depozīts izņemts!\n\n` +
+            `Pievienots: ${result.magicG}G ${result.magicS}S ${result.magicK}K\n` +
+            `Noņemts no depozīta: ${result.usedDepositText} €`
+        );
+
+        selectedChild.balanceKnutas += result.magicKnutas;
+
+        const newMagicBalance = fromKnutas(selectedChild.balanceKnutas);
+        selectedChild.balanceG = newMagicBalance.g;
+        selectedChild.balanceS = newMagicBalance.s;
+        selectedChild.balanceK = newMagicBalance.k;
+
+        selectedChild.depositBalanceCents -= result.usedDepositCents;
+        selectedChild.depositBalanceText = centsToEurosText(selectedChild.depositBalanceCents);
+        selectedChild.depositBalanceEuros = Number(selectedChild.depositBalanceText);
+
+        updateChildBalance();
+
+    } catch (error) {
+        alert("Kļūda! Depozīts netika izņemts.");
+        console.error(error);
+    }
+}
 </script>
 
 </body>
