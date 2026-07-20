@@ -513,6 +513,56 @@ button {
     opacity: 0.5;
     cursor: not-allowed;
 }
+#manageItemsButton,
+#markUnavailableButton {
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+}
+
+#manageItemsButton {
+    background: #8E6B3A;
+}
+
+#markUnavailableButton {
+    background: #A94442;
+}
+
+#markUnavailableButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.item-management-panel {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.item-management-panel h3 {
+    margin-top: 0;
+}
+
+#unavailableItemSelect {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    font-family: inherit;
+    font-size: 16px;
+    background: white;
+}
 #buyButton,
 #historyButton {
     width: 100%;
@@ -678,9 +728,20 @@ button {
       <button id="cashOutMuggleButton" onclick="cashOutMuggleMoney()">Izņemt vientiešu naudu</button>
       <button class="action-btn" style="background:#636e72;" onclick="resetBasket()">JAUNS PIRKUMS</button>
 
-      <button class="sheet-btn" onclick="showComingSoonMessage()">
+        <button id="manageItemsButton" onclick="toggleItemManagement()">
           Mainīt preces
-      </button>
+        </button>
+        <div id="itemManagementPanel" class="item-management-panel" style="display:none;">
+          <h3>Izņemt preci no lietošanas</h3>
+        
+          <select id="unavailableItemSelect">
+            <option value="">Izvēlies preci...</option>
+          </select>
+        
+          <button id="markUnavailableButton" onclick="markSelectedItemUnavailable()">
+            Izņemt no lietošanas
+          </button>
+        </div>
       <button id="historyButton" onclick="toggleSessionHistory()">Pirkumu vēsture</button>
         
       <div id="historyPanel" class="history-panel" style="display:none;">
@@ -775,7 +836,116 @@ function normalizeCashOutChoice(input) {
 
     return "";
 }
+let isUpdatingItemAvailability = false;
 
+function toggleItemManagement() {
+    const panel = document.getElementById("itemManagementPanel");
+
+    if (!panel) {
+        return;
+    }
+
+    if (panel.style.display === "none") {
+        panel.style.display = "block";
+        loadUnavailableItemSelect();
+    } else {
+        panel.style.display = "none";
+    }
+}
+
+function loadUnavailableItemSelect() {
+    const select = document.getElementById("unavailableItemSelect");
+
+    if (!select) {
+        return;
+    }
+
+    select.innerHTML = `<option value="">Izvēlies preci...</option>`;
+
+    const itemNames = Object.keys(items)
+        .filter(name => !name.startsWith("custom-"))
+        .sort((a, b) => a.localeCompare(b, "lv"));
+
+    itemNames.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
+function setMarkUnavailableButtonSaving(isSaving) {
+    const button = document.getElementById("markUnavailableButton");
+
+    if (!button) {
+        return;
+    }
+
+    button.disabled = isSaving;
+    button.textContent = isSaving
+        ? "Saglabā..."
+        : "Izņemt no lietošanas";
+}
+
+async function markSelectedItemUnavailable() {
+    if (isUpdatingItemAvailability) {
+        return;
+    }
+
+    const select = document.getElementById("unavailableItemSelect");
+    const itemName = select.value;
+
+    if (!itemName) {
+        alert("Izvēlies preci!");
+        return;
+    }
+
+    const confirmed = confirm(
+        `Izņemt šo preci no lietošanas?\n\n${itemName}\n\n` +
+        `Tā vairs nerādīsies preču sarakstā.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    isUpdatingItemAvailability = true;
+    setMarkUnavailableButtonSaving(true);
+
+    try {
+        const response = await fetch(SHEET_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "setItemUnavailable",
+                pin: cashierPin,
+                itemName: itemName
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            alert(result.message || "Neizdevās izņemt preci no lietošanas.");
+            return;
+        }
+
+        alert(`Prece izņemta no lietošanas:\n${itemName}`);
+
+        resetBasket();
+
+        await loadItemsFromSheet();
+
+        loadUnavailableItemSelect();
+
+    } catch (error) {
+        alert("Kļūda! Prece netika izmainīta.");
+        console.error(error);
+
+    } finally {
+        isUpdatingItemAvailability = false;
+        setMarkUnavailableButtonSaving(false);
+    }
+}
 function getCashOutModeLabel(mode) {
     if (mode === "magic") {
         return "Burvju nauda";
