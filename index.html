@@ -1828,6 +1828,7 @@ async function buyForChild() {
         }
 
         alert("Pirkums saglabāts!");
+        
         addSessionHistory({
             type: "purchase",
             childId: selectedChild.childId,
@@ -1840,18 +1841,20 @@ async function buyForChild() {
                 quantity: item.quantity
             }))
         });
-        selectedChild.balanceKnutas -= totalKnutas;
-
-        const newBalance = fromKnutas(selectedChild.balanceKnutas);
-        selectedChild.balanceG = newBalance.g;
-        selectedChild.balanceS = newBalance.s;
-        selectedChild.balanceK = newBalance.k;
-
-        updateChildBalance();
+        
+        await refreshChildrenOnly();
+        
         resetBasket();
-
-        if (typeof resetBuyerSelection === "function") {
-            resetBuyerSelection();
+        
+        const keepSameChild = confirm(
+            "Vai vēlies veikt citu darbību ar šo pašu bērnu?\n\n" +
+            "Piemēram, izņemt vientiešu naudu vai pārbaudīt atlikumu."
+        );
+        
+        if (!keepSameChild) {
+            if (typeof resetBuyerSelection === "function") {
+                resetBuyerSelection();
+            }
         }
 
     } catch (error) {
