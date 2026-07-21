@@ -712,7 +712,17 @@ button {
 .status-unavailable {
     color: #A94442;
 }
+.login-message {
+    margin-top: 10px;
+    min-height: 20px;
+    font-weight: bold;
+    opacity: 0.85;
+}
 
+#loginButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 .availability-btn {
     border: none;
     border-radius: 12px;
@@ -752,7 +762,8 @@ button {
     inputmode="numeric"
   >
 
-  <button onclick="loginWithPin()">Ienākt</button>
+  <button id="loginButton" onclick="loginWithPin()">Ienākt</button>
+  <div id="loginMessage" class="login-message"></div>
 </div>
 
 <div class="container" id="appContainer" style="display:none;">
@@ -856,6 +867,7 @@ button {
         </button>
         <div id="itemManagementPanel" class="item-management-panel" style="display:none;">
           <h3>Mainīt preces</h3>
+        
           <p class="item-management-help">
             Izvēlies preci, ko izņemt no lietošanas vai atgriezt atpakaļ.
           </p>
@@ -1933,6 +1945,9 @@ async function buyForChild() {
 }
 async function loginWithPin() {
     const pinInput = document.getElementById("pinInput");
+    const loginButton = document.getElementById("loginButton");
+    const loginMessage = document.getElementById("loginMessage");
+
     cashierPin = pinInput.value.trim();
 
     if (!cashierPin) {
@@ -1940,15 +1955,27 @@ async function loginWithPin() {
         return;
     }
 
+    loginButton.disabled = true;
+    loginButton.textContent = "Pieslēdzas...";
+    loginMessage.textContent = "Pieslēdzas sistēmai...";
+
     const success = await loadItemsFromSheet();
 
     if (success === false) {
         cashierPin = "";
+        loginButton.disabled = false;
+        loginButton.textContent = "Ienākt";
+        loginMessage.textContent = "Neizdevās pieslēgties. Pārbaudi PIN.";
         return;
     }
 
+    loginMessage.textContent = "";
+
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("appContainer").style.display = "block";
+
+    loginButton.disabled = false;
+    loginButton.textContent = "Ienākt";
 }
 function parseEuroInputToCents(input) {
     const cleaned = String(input || "")
