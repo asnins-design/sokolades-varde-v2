@@ -924,41 +924,47 @@ function fromKnutas(total) {
 }
 let isUpdatingItemAvailability = false;
 
-function toggleItemManagement() {
-    const panel = document.getElementById("itemManagementPanel");
 
-    if (!panel) {
-        return;
-    }
-
-    if (panel.style.display === "none") {
-        panel.style.display = "block";
-        renderItemManagementList();
-    } else {
-        panel.style.display = "none";
-    }
-}
 
 function renderItemManagementList() {
     const list = document.getElementById("itemManagementList");
 
     if (!list) {
+        alert("Nav atrasts itemManagementList div.");
         return;
     }
 
     list.innerHTML = "";
 
-    if (!allItems || allItems.length === 0) {
+    let itemsToShow = [];
+
+    if (allItems && allItems.length > 0) {
+        itemsToShow = allItems;
+    } else {
+        itemsToShow = Object.keys(items).map(name => {
+            return {
+                name: name,
+                g: 0,
+                s: 0,
+                k: 0,
+                image: items[name].image || "",
+                available: "yes",
+                price: items[name].price
+            };
+        });
+    }
+
+    if (!itemsToShow || itemsToShow.length === 0) {
         list.innerHTML = `
             <div class="empty-basket">
-                Nav atrasta neviena prece.
+                Nav atrasta neviena prece. Pārbaudi, vai allItems tiek saņemts no Apps Script.
             </div>
         `;
         return;
     }
 
-    const sortedItems = [...allItems].sort((a, b) =>
-        a.name.localeCompare(b.name, "lv")
+    const sortedItems = [...itemsToShow].sort((a, b) =>
+        String(a.name).localeCompare(String(b.name), "lv")
     );
 
     sortedItems.forEach(item => {
@@ -990,7 +996,12 @@ function renderItemManagementList() {
 
         const price = document.createElement("div");
         price.className = "manage-item-price";
-        price.textContent = formatMoney(toKnutas(item.g, item.s, item.k));
+
+        if (item.price !== undefined) {
+            price.textContent = formatMoney(item.price);
+        } else {
+            price.textContent = formatMoney(toKnutas(item.g, item.s, item.k));
+        }
 
         const status = document.createElement("div");
         status.className = isAvailable
@@ -1139,110 +1150,19 @@ function toggleItemManagement() {
     const panel = document.getElementById("itemManagementPanel");
 
     if (!panel) {
+        alert("Nav atrasts itemManagementPanel");
         return;
     }
 
     if (panel.style.display === "none") {
         panel.style.display = "block";
-        loadUnavailableItemSelect();
+        renderItemManagementList();
     } else {
         panel.style.display = "none";
     }
 }
 
-function loadUnavailableItemSelect() {
-    const select = document.getElementById("unavailableItemSelect");
 
-    if (!select) {
-        return;
-    }
-
-    select.innerHTML = `<option value="">Izvēlies preci...</option>`;
-
-    const itemNames = Object.keys(items)
-        .filter(name => !name.startsWith("custom-"))
-        .sort((a, b) => a.localeCompare(b, "lv"));
-
-    itemNames.forEach(name => {
-        const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
-        select.appendChild(option);
-    });
-}
-
-function setMarkUnavailableButtonSaving(isSaving) {
-    const button = document.getElementById("markUnavailableButton");
-
-    if (!button) {
-        return;
-    }
-
-    button.disabled = isSaving;
-    button.textContent = isSaving
-        ? "Saglabā..."
-        : "Izņemt no lietošanas";
-}
-
-async function markSelectedItemUnavailable() {
-    if (isUpdatingItemAvailability) {
-        return;
-    }
-
-    const select = document.getElementById("unavailableItemSelect");
-    const itemName = select.value;
-
-    if (!itemName) {
-        alert("Izvēlies preci!");
-        return;
-    }
-
-    const confirmed = confirm(
-        `Izņemt šo preci no lietošanas?\n\n${itemName}\n\n` +
-        `Tā vairs nerādīsies preču sarakstā.`
-    );
-
-    if (!confirmed) {
-        return;
-    }
-
-    isUpdatingItemAvailability = true;
-    setMarkUnavailableButtonSaving(true);
-
-    try {
-        const response = await fetch(SHEET_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "setItemUnavailable",
-                pin: cashierPin,
-                itemName: itemName
-            })
-        });
-
-        const result = await response.json();
-
-        if (!result.success) {
-            alert(result.message || "Neizdevās izņemt preci no lietošanas.");
-            return;
-        }
-
-        alert(`Prece izņemta no lietošanas:\n${itemName}`);
-
-        resetBasket();
-
-        await loadItemsFromSheet();
-
-        loadUnavailableItemSelect();
-
-    } catch (error) {
-        alert("Kļūda! Prece netika izmainīta.");
-        console.error(error);
-
-    } finally {
-        isUpdatingItemAvailability = false;
-        setMarkUnavailableButtonSaving(false);
-    }
-}
 function getCashOutModeLabel(mode) {
     if (mode === "magic") {
         return "Burvju nauda";
